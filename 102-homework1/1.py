@@ -1,9 +1,42 @@
 import csv
 
+'''
+N_customer = 486
+N_category = 979
+'''
+
 
 class assignment1:
+
+    '''
+    成员变量注释：
+    1. category_max_sell：
+        含义：每个种类最多卖了多少。
+        计算方法：对属于各种类的订单的amt求和。
+        长度：N-category。
+        成员类型：float
+    2. jaccard：
+        成员为三元组[a,b,J-distance]。
+        变量含义：a和b是顾客的索引号index，满足a<b。J-distance是a b顾客间的Jaccard值。
+        长度：0.5*(N_customer)^2。
+        成员类型：[int,int,float]
+    3. customers_id：
+        含义：记录顾客的ID编码。
+        长度：N_customer
+        成员类型：str
+    4. buy_dicts。
+        含义：每一个顾客买了什么，以dict的形式展示。
+        长度：N_customer
+        成员类型：dict。key是种类的int形式表示，value是各种类的订单的amt求和。
+    5. category_index
+        含义：将类别序列化。输入种类，输出索引。
+        长度：N-category。
+        类型：dict。输入key的种类的int形式，输出种类对应的索引，以0开始。
+    6. category_total
+        含义：商品类型总计。在我们的样例中，值为979。
+    '''
     category_max_sell = []
-    jaccard = []                    # 一个
+    jaccard = []
     customers_id = []
     buy_dicts = []
     category_index = {}
@@ -110,6 +143,27 @@ class assignment1:
             index = self.category_index[key]
             vector[index] = buy_dict[key]
         return vector
+
+    # 获得所有的种类，并统计每个种类的amt总值
+
+    def init_count_category(self):
+        with open('trade_new.csv', 'r', encoding='utf-8') as myFile:
+            lines = csv.reader(myFile)
+            for line in lines:
+                category = int(line[7][:5])
+                self.count[category] += float(line[17])
+
+        total_category = 0
+        print('以下每隔100种，输出一个种类的信息。')
+        for i in range(100010):
+            if self.count[i] != 0.0:
+                total_category += 1
+                self.category_list.append(i)
+                if total_category % 100 == 0:
+                    print('第%d种品类：种类id：%d，总价：%.2f' %
+                          (total_category, i, self.count[i]))
+
+        print('一共有%d个种类。' % total_category)
 
     def kmeans(self):
         # 把用户的dict做成向量
