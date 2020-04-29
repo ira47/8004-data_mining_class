@@ -36,7 +36,10 @@ class assignment2:
     buy_dicts_level_3 = []
     buy_dicts_level_2 = []
     buy_dicts_level_1 = []
-    centroids = []
+    centroids_level_4 = []
+    centroids_level_3 = []
+    centroids_level_2 = []
+    centroids_level_1 = []
     clusters_old = []
     clusters_new = []
     iter_time = 0
@@ -142,7 +145,7 @@ class assignment2:
             union_total += union_dict[key]
         return union_total/intersection_total
 
-    def get_jaccard(self, i, j):
+    def get_jaccard_sample_sample(self, i, j):
         sim1 = self.get_similarity(
             self.buy_dicts_level_1[i], self.buy_dicts_level_1[j])
         sim2 = self.get_similarity(
@@ -153,13 +156,24 @@ class assignment2:
             self.buy_dicts_level_4[i], self.buy_dicts_level_4[j])
         return (sim1+sim2+sim3+sim4)/4
 
+    def get_jaccard_centroid_sample(self, i, j):
+        sim1 = self.get_similarity(
+            self.centroids_level_1[i], self.buy_dicts_level_1[j])
+        sim2 = self.get_similarity(
+            self.centroids_level_2[i], self.buy_dicts_level_2[j])
+        sim3 = self.get_similarity(
+            self.centroids_level_3[i], self.buy_dicts_level_3[j])
+        sim4 = self.get_similarity(
+            self.centroids_level_4[i], self.buy_dicts_level_4[j])
+        return (sim1+sim2+sim3+sim4)/4
+
     # 计算所有人的Jaccard系数
 
     def count_all_jaccard(self):
         for a_index in range(len(self.customers_id)):
             for b_index in range(len(self.customers_id)):
                 if a_index < b_index:
-                    jaccard = self.get_jaccard(a_index, b_index)
+                    jaccard = self.get_jaccard_sample_sample(a_index, b_index)
                     self.jaccard[a_index, b_index] = jaccard
         print('-----------------------------------------')
         print('已完成Jaccard系数计算，一共有%d个。' % len(self.jaccard))
@@ -178,7 +192,14 @@ class assignment2:
             customer_index = int(
                 random.random()*self.N_CUSTOMER) % self.N_CUSTOMER
             if customer_index not in customer_index_list:
-                self.centroids.append(self.buy_dicts[customer_index])
+                self.centroids_level_4.append(
+                    self.buy_dicts_level_4[customer_index])
+                self.centroids_level_3.append(
+                    self.buy_dicts_level_3[customer_index])
+                self.centroids_level_2.append(
+                    self.buy_dicts_level_2[customer_index])
+                self.centroids_level_1.append(
+                    self.buy_dicts_level_1[customer_index])
                 customer_index_list.append(customer_index)
 
     def clustering(self):
@@ -190,8 +211,8 @@ class assignment2:
             min_j_distance = 2
             cluster_index_for_min_j_distance = -1
             for cluster_index in range(self.K):
-                similarity = self.get_similarity(
-                    self.centroids[cluster_index], self.buy_dicts[customer_index])
+                similarity = self.get_jaccard_centroid_sample(
+                    cluster_index, customer_index)
                 j_distance = 1 - similarity
                 if j_distance < min_j_distance:
                     min_j_distance = j_distance
@@ -207,10 +228,20 @@ class assignment2:
     def compare_cluster_result(self):
         return self.clusters_new == self.clusters_old
 
-    def get_new_centroid(self, cluster_index):
+    # 给一个cluster，计算其质心。
+    def get_new_centroid(self, cluster_index, level):
         centroid = {}
         for customer_index in self.clusters_old[cluster_index]:
-            buy_dict = self.buy_dicts[customer_index]
+            # 取对应level的buy_dict
+            if level == 1:
+                buy_dict = self.buy_dicts_level_1[customer_index]
+            elif level == 2:
+                buy_dict = self.buy_dicts_level_2[customer_index]
+            elif level == 3:
+                buy_dict = self.buy_dicts_level_3[customer_index]
+            elif level == 4:
+                buy_dict = self.buy_dicts_level_4[customer_index]
+
             for key in buy_dict.keys():
                 if key in centroid.keys():
                     centroid[key] += buy_dict[key]
@@ -229,8 +260,14 @@ class assignment2:
 
         # 计算新的重心对应的dict。
         for cluster_index in range(self.K):
-            self.centroids[cluster_index] = self.get_new_centroid(
-                cluster_index)
+            self.centroids_level_1[cluster_index] = self.get_new_centroid(
+                cluster_index, 1)
+            self.centroids_level_2[cluster_index] = self.get_new_centroid(
+                cluster_index, 2)
+            self.centroids_level_3[cluster_index] = self.get_new_centroid(
+                cluster_index, 3)
+            self.centroids_level_4[cluster_index] = self.get_new_centroid(
+                cluster_index, 4)
 
     def evaluate_cluster(self):
         n_show_each_cluster = 10
@@ -264,8 +301,8 @@ class assignment2:
         for cluster_index in range(self.K):
             cluster_members = self.clusters_old[cluster_index]
             for customer_index in cluster_members:
-                similarity = self.get_similarity(
-                    self.buy_dicts[customer_index], self.centroids[cluster_index])
+                similarity = self.get_jaccard_centroid_sample(
+                    cluster_index, customer_index)
                 distance = 1 - similarity
                 cp_total_distance += distance
                 cp_line_sum += 1
@@ -301,3 +338,6 @@ if __name__ == '__main__':
     print('=========================================')
     print('作业2-2')
     ass2.count_all_jaccard()
+    print('=========================================')
+    print('作业2-3')
+    ass2.kmeans()
