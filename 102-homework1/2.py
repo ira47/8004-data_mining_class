@@ -2,7 +2,7 @@ import csv
 import random
 
 
-class assignment1:
+class assignment2:
 
     K = 40
     N_CUSTOMER = 486
@@ -30,6 +30,10 @@ class assignment1:
     5. K
         含义：K-means中划分的簇的个数。
     '''
+    category_level_4 = [0.0 for i in range(100000)]
+    category_level_3 = [0.0 for i in range(10000)]
+    category_level_2 = [0.0 for i in range(1000)]
+    category_level_1 = [0.0 for i in range(100)]
     customers_id = []
     jaccard = {}
     buy_dicts = []
@@ -40,56 +44,64 @@ class assignment1:
     '''
 
 
-    以下是作业1-1代码。
+    以下是作业2-1代码。
 
 
     '''
+    # 获得所有的第四等级的种类，并统计每个种类的amt总值
 
-    # 获得所有顾客的id
-
-    def get_all_customers(self):
+    def init_count_category(self):
         with open('trade_new.csv', 'r', encoding='utf-8') as myFile:
             lines = csv.reader(myFile)
             for line in lines:
-                customer_id = line[5]
-                if customer_id not in self.customers_id:
-                    self.customers_id.append(customer_id)
-        print('-----------------------------------------')
-        print("加载所有的顾客id信息，一共有%d人。" % len(self.customers_id))
-
-    # 作业1-1 批量更新buy_dict
-
-    def update_buy_dicts(self):
-        self.buy_dicts = [{} for i in range(len(self.customers_id))]
-        with open('trade_new.csv', 'r', encoding='utf-8') as myFile:
-            lines = csv.reader(myFile)
-            for line in lines:
-                customer_index = self.customers_id.index(line[5])
                 category = int(line[7][:5])
-                if category in self.buy_dicts[customer_index].keys():
-                    self.buy_dicts[customer_index][category] += float(line[17])
-                else:
-                    self.buy_dicts[customer_index][category] = float(line[17])
+                self.category_level_4[category] += float(line[17])
 
-    def output_buy_dicts(self):
+    def print_category(self, category, stride, level):
+        total_category = 0
         print('-----------------------------------------')
-        print("已按类别对用户进行商品金额汇总。下面显示一些数据。")
-        for i in range(len(self.buy_dicts)):
-            if i % 100 == 0:
-                buy_dict = self.buy_dicts[i]
-                print('用户ID：%s。它的词典：%s。' %
-                      (self.customers_id[i], str(buy_dict)))
-                print()
+        print('以下每隔%d种，输出一个第%d等级的种类的信息。' % (stride, level))
+        for i in range(len(category)):
+            if category[i] != 0.0:
+                total_category += 1
+                if total_category % stride == 0:
+                    print('第%d种品类：种类id：%d，总价：%.2f' %
+                          (total_category, i, category[i]))
 
+        print('一共有%d个第%d等级的种类。' % (total_category, level))
+
+    def count_higher_level_category(self, category_new, category_old):
+        ratio = int(len(category_old)/len(category_new))
+        for i in range(len(category_new)):
+            for j in range(ratio):
+                category_new[i] += category_old[i*ratio+j]
+
+        return category_new
+
+    def sum_category_by_level(self):
+        # 计算各级种类的销售总额
+        self.init_count_category()
+        self.category_level_3 = self.count_higher_level_category(
+            self.category_level_3, self.category_level_4)
+        self.category_level_2 = self.count_higher_level_category(
+            self.category_level_2, self.category_level_3)
+        self.category_level_1 = self.count_higher_level_category(
+            self.category_level_1, self.category_level_2)
+
+        # 输出计算的各级总额。
+        self.print_category(self.category_level_1, 2, 1)
+        self.print_category(self.category_level_2, 10, 2)
+        self.print_category(self.category_level_3, 50, 3)
+        self.print_category(self.category_level_4, 100, 4)
     '''
 
 
-    以下是作业1-2代码。
+    以下是作业2-2代码。
 
 
     '''
 
-    # 作业1-2 计算两个特定人之间的相似度
+    # 计算两个特定人之间的相似度
 
     def get_similarity(self, a, b):
         # 创建交集字典和并集字典
@@ -119,7 +131,7 @@ class assignment1:
             union_total += union_dict[key]
         return union_total/intersection_total
 
-    # 作业1-2 计算所有人的Jaccard系数
+    # 计算所有人的Jaccard系数
 
     def count_jaccard(self):
         count = 0
@@ -136,7 +148,7 @@ class assignment1:
     '''
 
 
-    以下是作业1-3代码。
+    以下是作业2-3代码。
 
 
     '''
@@ -255,15 +267,7 @@ class assignment1:
 
 
 if __name__ == '__main__':
-    ass1 = assignment1()
+    ass2 = assignment2()
     print('=========================================')
-    print('作业1-1')
-    ass1.get_all_customers()
-    ass1.update_buy_dicts()
-    ass1.output_buy_dicts()
-    print('=========================================')
-    print('作业1-2')
-    ass1.count_jaccard()
-    print('=========================================')
-    print('作业1-3')
-    ass1.kmeans()
+    print('作业2-1')
+    ass2.sum_category_by_level()
