@@ -30,13 +30,12 @@ class assignment2:
     5. K
         含义：K-means中划分的簇的个数。
     '''
-    category_level_4 = [0.0 for i in range(100000)]
-    category_level_3 = [0.0 for i in range(10000)]
-    category_level_2 = [0.0 for i in range(1000)]
-    category_level_1 = [0.0 for i in range(100)]
     customers_id = []
     jaccard = {}
-    buy_dicts = []
+    buy_dicts_level_4 = []
+    buy_dicts_level_3 = []
+    buy_dicts_level_2 = []
+    buy_dicts_level_1 = []
     centroids = []
     clusters_old = []
     clusters_new = []
@@ -48,51 +47,63 @@ class assignment2:
 
 
     '''
-    # 获得所有的第四等级的种类，并统计每个种类的amt总值
 
-    def init_count_category(self):
+    # 获得所有顾客的id
+
+    def get_all_customers(self):
         with open('trade_new.csv', 'r', encoding='utf-8') as myFile:
             lines = csv.reader(myFile)
             for line in lines:
-                category = int(line[7][:5])
-                self.category_level_4[category] += float(line[17])
-
-    def print_category(self, category, stride, level):
-        total_category = 0
+                customer_id = line[5]
+                if customer_id not in self.customers_id:
+                    self.customers_id.append(customer_id)
         print('-----------------------------------------')
-        print('以下每隔%d种，输出一个第%d等级的种类的信息。' % (stride, level))
-        for i in range(len(category)):
-            if category[i] != 0.0:
-                total_category += 1
-                if total_category % stride == 0:
-                    print('第%d种品类：种类id：%d，总价：%.2f' %
-                          (total_category, i, category[i]))
+        print("加载所有的顾客id信息，一共有%d人。" % len(self.customers_id))
 
-        print('一共有%d个第%d等级的种类。' % (total_category, level))
+    # 批量更新第四等级的buy_dict
 
-    def count_higher_level_category(self, category_new, category_old):
-        ratio = int(len(category_old)/len(category_new))
-        for i in range(len(category_new)):
-            for j in range(ratio):
-                category_new[i] += category_old[i*ratio+j]
+    def update_basic_buy_dicts(self):
+        buy_dicts = [{} for i in range(len(self.customers_id))]
+        with open('trade_new.csv', 'r', encoding='utf-8') as myFile:
+            lines = csv.reader(myFile)
+            for line in lines:
+                customer_index = self.customers_id.index(line[5])
+                category = int(line[7][:5])
+                if category in buy_dicts[customer_index].keys():
+                    buy_dicts[customer_index][category] += float(line[17])
+                else:
+                    buy_dicts[customer_index][category] = float(line[17])
+        return buy_dicts
 
-        return category_new
+    def update_higher_level_buy_dicts(self, buy_dicts_old):
+        buy_dicts = []
 
-    def sum_category_by_level(self):
-        # 计算各级种类的销售总额
-        self.init_count_category()
-        self.category_level_3 = self.count_higher_level_category(
-            self.category_level_3, self.category_level_4)
-        self.category_level_2 = self.count_higher_level_category(
-            self.category_level_2, self.category_level_3)
-        self.category_level_1 = self.count_higher_level_category(
-            self.category_level_1, self.category_level_2)
+        for i in range(len(self.customers_id)):
+            buy_dict_new = {}
+            buy_dict_old = buy_dicts_old[i]
+            for key_old in buy_dict_old.keys():
+                key_new = int(key_old / 10)
+                if key_new in buy_dict_new.keys():
+                    buy_dict_new[key_new] += buy_dict_old[key_old]
+                else:
+                    buy_dict_new[key_new] = buy_dict_old[key_old]
+            buy_dicts.append(buy_dict_new)
 
-        # 输出计算的各级总额。
-        self.print_category(self.category_level_1, 2, 1)
-        self.print_category(self.category_level_2, 10, 2)
-        self.print_category(self.category_level_3, 50, 3)
-        self.print_category(self.category_level_4, 100, 4)
+        return buy_dicts
+
+    def output_buy_dicts(self, i_list):
+        for i in i_list:
+            print('-----------------------------------------')
+            print("现在对用户(id: %s)显示其四级购物数据。" % self.customers_id[i])
+            buy_dict = []
+            buy_dict.append(self.buy_dicts_level_1[i])
+            buy_dict.append(self.buy_dicts_level_2[i])
+            buy_dict.append(self.buy_dicts_level_3[i])
+            buy_dict.append(self.buy_dicts_level_4[i])
+
+            for j in range(len(buy_dict)):
+                print('等级%d的词典：%s。' % (j+1, str(buy_dict[j])))
+                print()
     '''
 
 
@@ -270,4 +281,12 @@ if __name__ == '__main__':
     ass2 = assignment2()
     print('=========================================')
     print('作业2-1')
-    ass2.sum_category_by_level()
+    ass2.get_all_customers()
+    ass2.buy_dicts_level_4 = ass2.update_basic_buy_dicts()
+    ass2.buy_dicts_level_3 = ass2.update_higher_level_buy_dicts(
+        ass2.buy_dicts_level_4)
+    ass2.buy_dicts_level_2 = ass2.update_higher_level_buy_dicts(
+        ass2.buy_dicts_level_3)
+    ass2.buy_dicts_level_1 = ass2.update_higher_level_buy_dicts(
+        ass2.buy_dicts_level_2)
+    ass2.output_buy_dicts([100, 200])
