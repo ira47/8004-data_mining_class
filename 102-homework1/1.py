@@ -16,7 +16,7 @@ class assignment1:
         成员类型：str
     2. jaccard：
         成员为字典[a,b]->J-distance。
-        变量含义：a和b是顾客的索引号index，满足a<b。J-distance是a b顾客间的Jaccard值。
+        变量含义：a和b是buy_dict实例。J-distance是a b顾客间的Jaccard值。
         长度：0.5*(N_CUSTOMER)^2。
         成员类型：[int,int]->float
     3. buy_dicts。
@@ -34,7 +34,9 @@ class assignment1:
     jaccard = {}
     buy_dicts = []
     centroids = []
-
+    clusters_old = []
+    clusters_new = []
+    iter_time = 0
     '''
 
 
@@ -94,18 +96,18 @@ class assignment1:
         union_dict = {}
         intersection_dict = {}
 
-        a_dict = self.buy_dicts[a]
-        b_dict = self.buy_dicts[b]
+        # a_dict = self.buy_dicts[a]
+        # b_dict = self.buy_dicts[b]
 
-        for key in a_dict.keys():
-            if key in b_dict.keys():
-                union_dict[key] = min(a_dict[key], b_dict[key])
-                intersection_dict[key] = max(a_dict[key], b_dict[key])
+        for key in a.keys():
+            if key in b.keys():
+                union_dict[key] = min(a[key], b[key])
+                intersection_dict[key] = max(a[key], b[key])
             else:
-                intersection_dict[key] = a_dict[key]
-        for key in b_dict.keys():
-            if key not in a_dict.keys():
-                intersection_dict[key] = b_dict[key]
+                intersection_dict[key] = a[key]
+        for key in b.keys():
+            if key not in a.keys():
+                intersection_dict[key] = b[key]
 
         # 计算Jaccard系数
         union_total = 0
@@ -124,14 +126,15 @@ class assignment1:
         for a_index in range(len(self.customers_id)):
             for b_index in range(len(self.customers_id)):
                 if a_index < b_index:
-                    similarity = self.get_similarity(a_index, b_index)
+                    similarity = self.get_similarity(
+                        self.buy_dicts[a_index], self.buy_dicts[b_index])
                     self.jaccard[a_index, b_index] = similarity
                     count += 1
         print('-----------------------------------------')
         print('已完成Jaccard系数计算，一共有%d个。' % len(self.jaccard))
 
     '''
-    
+
 
     以下是作业1-3代码。
 
@@ -140,27 +143,112 @@ class assignment1:
 
     def init_centroids(self):
         customer_index_list = []
-        while len(customer_index_list) < K:
+        while len(customer_index_list) < self.K:
             customer_index = int(
                 random.random()*self.N_CUSTOMER) % self.N_CUSTOMER
             if customer_index not in customer_index_list:
-                self.centroids.apppend(buy_dicts[customer_index])
+                self.centroids.append(self.buy_dicts[customer_index])
                 customer_index_list.append(customer_index)
 
     def clustering(self):
+        # 初始化cluster_new，使得可以存储K个数组。
+        self.clusters_new = [[] for i in range(self.K)]
+
+        # 对每个顾客，计算离他们最近的重心，并将index放入对应的cluster
+        for customer_index in range(self.N_CUSTOMER):
+            min_j_distance = 2
+            cluster_index_for_min_j_distance = -1
+            for cluster_index in range(self.K):
+                similarity = self.get_similarity(
+                    self.centroids[cluster_index], self.buy_dicts[customer_index])
+                j_distance = 1 - similarity
+                if j_distance < min_j_distance:
+                    min_j_distance = j_distance
+                    cluster_index_for_min_j_distance = cluster_index
+            self.clusters_new[cluster_index_for_min_j_distance].append(
+                customer_index)
+
+        self.iter_time += 1
+
+        print('-----------------------------------------')
+        print('已完成第%d轮聚类计算。' % self.iter_time)
 
     def compare_cluster_result(self):
+        return self.clusters_new == self.clusters_old
+
+    def get_new_centroid(self, cluster_index):
+        centroid = {}
+        for customer_index in self.clusters_old[cluster_index]:
+            buy_dict = self.buy_dicts[customer_index]
+            for key in buy_dict.keys():
+                if key in centroid.keys():
+                    centroid[key] += buy_dict[key]
+                else:
+                    centroid[key] = buy_dict[key]
+
+        cluster_member_size = len(self.clusters_old[cluster_index])
+        for key in centroid.keys():
+            centroid[key] /= cluster_member_size
+
+        return centroid
 
     def next_generation(self):
+        # 把旧的cluster数据，用新的cluster数据替换
+        self.clusters_old = self.clusters_new
+
+        # 计算新的重心对应的dict。
+        for cluster_index in range(self.K):
+            self.centroids[cluster_index] = self.get_new_centroid(
+                cluster_index)
 
     def evaluate_cluster(self):
+        n_show_each_cluster = 10
+
+        print('-----------------------------------------')
+        print('聚类已完成。共经历%d轮聚类计算。' % self.iter_time)
+
+        print('以下展示聚类的结果。每个簇展示前%d个实例对应的index编号。' % n_show_each_cluster)
+        for cluster_index in range(self.K):
+            print('第%d个簇，共有%d个成员。部分成员index：%s。' % (cluster_index+1,  len(
+                self.clusters_old[cluster_index]), self.clusters_old[cluster_index][:n_show_each_cluster]))
+
+        # 计算SC
+        sc_total_distance = 0.0
+        sc_line_sum = 0
+        for cluster_members in self.clusters_old:
+            for i in cluster_members:
+                for j in cluster_members:
+                    if i < j:
+                        similarity = self.jaccard[i, j]
+                        distance = 1 - similarity
+                        sc_total_distance += distance
+                        sc_line_sum += 1
+        SC = sc_total_distance/sc_line_sum
+
+        print('该聚类的SC系数为：%f。' % SC)
+
+        # 计算CP
+        cp_total_distance = 0.0
+        cp_line_sum = 0
+        for cluster_index in range(self.K):
+            cluster_members = self.clusters_old[cluster_index]
+            for customer_index in cluster_members:
+                similarity = self.get_similarity(
+                    self.buy_dicts[customer_index], self.centroids[cluster_index])
+                distance = 1 - similarity
+                cp_total_distance += distance
+                cp_line_sum += 1
+
+        CP = cp_total_distance / cp_line_sum
+
+        print('该聚类的CP系数为：%f。' % CP)
 
     def kmeans(self):
         self.init_centroids()
         while 1:
             self.clustering()
-            is_equal_clustering_result = self.compare_cluster_result()
-            if is_equal_clustering_result:
+            is_equal_clustering = self.compare_cluster_result()
+            if is_equal_clustering:
                 break
             self.next_generation()
         self.evaluate_cluster()
