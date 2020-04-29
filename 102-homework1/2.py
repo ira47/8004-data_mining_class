@@ -142,17 +142,25 @@ class assignment2:
             union_total += union_dict[key]
         return union_total/intersection_total
 
+    def get_jaccard(self, i, j):
+        sim1 = self.get_similarity(
+            self.buy_dicts_level_1[i], self.buy_dicts_level_1[j])
+        sim2 = self.get_similarity(
+            self.buy_dicts_level_2[i], self.buy_dicts_level_2[j])
+        sim3 = self.get_similarity(
+            self.buy_dicts_level_3[i], self.buy_dicts_level_3[j])
+        sim4 = self.get_similarity(
+            self.buy_dicts_level_4[i], self.buy_dicts_level_4[j])
+        return (sim1+sim2+sim3+sim4)/4
+
     # 计算所有人的Jaccard系数
 
-    def count_jaccard(self):
-        count = 0
+    def count_all_jaccard(self):
         for a_index in range(len(self.customers_id)):
             for b_index in range(len(self.customers_id)):
                 if a_index < b_index:
-                    similarity = self.get_similarity(
-                        self.buy_dicts[a_index], self.buy_dicts[b_index])
-                    self.jaccard[a_index, b_index] = similarity
-                    count += 1
+                    jaccard = self.get_jaccard(a_index, b_index)
+                    self.jaccard[a_index, b_index] = jaccard
         print('-----------------------------------------')
         print('已完成Jaccard系数计算，一共有%d个。' % len(self.jaccard))
 
@@ -290,3 +298,6 @@ if __name__ == '__main__':
     ass2.buy_dicts_level_1 = ass2.update_higher_level_buy_dicts(
         ass2.buy_dicts_level_2)
     ass2.output_buy_dicts([100, 200])
+    print('=========================================')
+    print('作业2-2')
+    ass2.count_all_jaccard()
