@@ -2,7 +2,7 @@ import csv
 import random
 
 
-class assignment2:
+class assignment3:
 
     K = 40
     N_CUSTOMER = 486
@@ -31,25 +31,10 @@ class assignment2:
         含义：K-means中划分的簇的个数。
     '''
     customers_id = []
-    jaccard = {}
-    buy_dicts_level_4 = []
-    buy_dicts_level_3 = []
-    buy_dicts_level_2 = []
-    buy_dicts_level_1 = []
-    centroids_level_4 = []
-    centroids_level_3 = []
-    centroids_level_2 = []
-    centroids_level_1 = []
+    dicts = []
     clusters_old = []
     clusters_new = []
     iter_time = 0
-    '''
-
-
-    以下是作业2-1代码。
-
-
-    '''
 
     # 获得所有顾客的id
 
@@ -60,90 +45,87 @@ class assignment2:
                 customer_id = line[5]
                 if customer_id not in self.customers_id:
                     self.customers_id.append(customer_id)
-        print('-----------------------------------------')
-        print("加载所有的顾客id信息，一共有%d人。" % len(self.customers_id))
 
     # 批量更新第四等级的buy_dict
 
-    def update_basic_buy_dicts(self):
-        buy_dicts = [{} for i in range(len(self.customers_id))]
+    def update_basic_dicts(self):
+        self.dicts = [[{}, {}, {}, {}] for i in range(len(self.customers_id))]
+
         with open('trade_new.csv', 'r', encoding='utf-8') as myFile:
             lines = csv.reader(myFile)
             for line in lines:
                 customer_index = self.customers_id.index(line[5])
                 category = int(line[7][:5])
-                if category in buy_dicts[customer_index].keys():
-                    buy_dicts[customer_index][category] += float(line[17])
+                if category in self.dicts[customer_index][3].keys():
+                    self.dicts[customer_index][3][category] += float(line[17])
                 else:
-                    buy_dicts[customer_index][category] = float(line[17])
-        return buy_dicts
+                    self.dicts[customer_index][3][category] = float(line[17])
 
-    def update_higher_level_buy_dicts(self, buy_dicts_old):
-        buy_dicts = []
+    def update_higher_level_buy_dicts(self):
+        for customer_index in range(len(self.customers_id)):
+            for level in range(3, 0, -1):
+                buy_dict_new = {}
+                buy_dict_old = self.dicts[customer_index][level]
+                for key_old in buy_dict_old.keys():
+                    key_new = int(key_old / 10)
+                    if key_new in buy_dict_new.keys():
+                        buy_dict_new[key_new] += buy_dict_old[key_old]
+                    else:
+                        buy_dict_new[key_new] = buy_dict_old[key_old]
+                self.dicts[customer_index][level-1] = buy_dict_new
 
-        for i in range(len(self.customers_id)):
-            buy_dict_new = {}
-            buy_dict_old = buy_dicts_old[i]
-            for key_old in buy_dict_old.keys():
-                key_new = int(key_old / 10)
-                if key_new in buy_dict_new.keys():
-                    buy_dict_new[key_new] += buy_dict_old[key_old]
-                else:
-                    buy_dict_new[key_new] = buy_dict_old[key_old]
-            buy_dicts.append(buy_dict_new)
+    # 计算交集树和并集树在某一个level上的相似度
+    def get_similarity(self, intersection, union, level):
+        # total_similarity其中的一个similarity，是一个节点对UR的相似度。
+        total_similarity = 0.0
+        node_size = len(intersection[level-1])
 
-        return buy_dicts
+        for key_intersection in intersection[level-1].keys():
+            # 计算一个节点对UR的相似度。
+            intersection_price = intersection[level-1][key_intersection]
+            union_price = 0.0
+            parent_intersection = int(key_intersection/10)
+            for key_union in union[level-1].keys():
+                parent_union = int(key_intersection/10)
+                if level == 1 or parent_union == parent_intersection:
+                    union_price += union[level-1][key_union]
+            total_similarity += intersection_price/union_price
+        similarity = total_similarity/node_size
 
-    def output_buy_dicts(self, i_list):
-        for i in i_list:
-            print('-----------------------------------------')
-            print("现在对用户(id: %s)显示其四级购物数据。" % self.customers_id[i])
-            buy_dict = []
-            buy_dict.append(self.buy_dicts_level_1[i])
-            buy_dict.append(self.buy_dicts_level_2[i])
-            buy_dict.append(self.buy_dicts_level_3[i])
-            buy_dict.append(self.buy_dicts_level_4[i])
+        return similarity
+    # 计算两个dict_vector之间的距离
 
-            for j in range(len(buy_dict)):
-                print('等级%d的词典：%s。' % (j+1, str(buy_dict[j])))
-                print()
-    '''
-
-
-    以下是作业2-2代码。
-
-
-    '''
-
-    # 计算两个特定人之间的相似度
-
-    def get_similarity(self, a, b):
+    def get_distance(self, a, b):
         # 创建交集字典和并集字典
-        union_dict = {}
-        intersection_dict = {}
+        union = []
+        intersection = []
 
-        # a_dict = self.buy_dicts[a]
-        # b_dict = self.buy_dicts[b]
+        for level in range(4):
+            union_dict = {}
+            intersection_dict = {}
+            a_dict = a[level]
+            b_dict = b[level]
+            for key in a_dict.keys():
+                if key in b_dict.keys():
+                    union_dict[key] = max(a_dict[key], b_dict[key])
+                    intersection_dict[key] = min(a_dict[key], b_dict[key])
+                else:
+                    union_dict[key] = a_dict[key]
+            for key in b_dict.keys():
+                if key not in a_dict.keys():
+                    union_dict[key] = b_dict[key]
 
-        for key in a.keys():
-            if key in b.keys():
-                union_dict[key] = max(a[key], b[key])
-                intersection_dict[key] = min(a[key], b[key])
-            else:
-                union_dict[key] = a[key]
-        for key in b.keys():
-            if key not in a.keys():
-                union_dict[key] = b[key]
+            union.append(union_dict)
+            intersection.append(intersection_dict)
 
-        # 计算Jaccard系数
-        union_total = 0
-        intersection_total = 0
+        # 计算距离
+        sim1 = get_similarity(intersection, union, 1)
+        sim2 = get_similarity(intersection, union, 2)
+        sim3 = get_similarity(intersection, union, 3)
+        sim4 = get_similarity(intersection, union, 4)
 
-        for key in intersection_dict.keys():
-            intersection_total += intersection_dict[key]
-        for key in union_dict.keys():
-            union_total += union_dict[key]
-        return intersection_total/union_total
+        distance = 1 - (sim1+sim2*2+sim3*3+sim4*4)/10
+        return distance
 
     def get_jaccard_sample_sample(self, i, j):
         sim1 = self.get_similarity(

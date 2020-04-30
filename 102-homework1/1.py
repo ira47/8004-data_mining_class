@@ -101,13 +101,13 @@ class assignment1:
 
         for key in a.keys():
             if key in b.keys():
-                union_dict[key] = min(a[key], b[key])
-                intersection_dict[key] = max(a[key], b[key])
+                union_dict[key] = max(a[key], b[key])
+                intersection_dict[key] = min(a[key], b[key])
             else:
-                intersection_dict[key] = a[key]
+                union_dict[key] = a[key]
         for key in b.keys():
             if key not in a.keys():
-                intersection_dict[key] = b[key]
+                union_dict[key] = b[key]
 
         # 计算Jaccard系数
         union_total = 0
@@ -117,7 +117,7 @@ class assignment1:
             intersection_total += intersection_dict[key]
         for key in union_dict.keys():
             union_total += union_dict[key]
-        return union_total/intersection_total
+        return intersection_total/union_total
 
     # 作业1-2 计算所有人的Jaccard系数
 
