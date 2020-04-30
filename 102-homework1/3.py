@@ -75,20 +75,20 @@ class assignment3:
                 self.dicts[customer_index][level-1] = buy_dict_new
 
     # 计算交集树和并集树在某一个level上的相似度
-    def get_similarity(self, intersection, union, level):
+    def get_similarity(self, intersection, union, get_all_included):
         # total_similarity其中的一个similarity，是一个节点对UR的相似度。
         total_similarity = 0.0
-        node_size = len(intersection[level-1])
+        node_size = len(intersection)
 
-        for key_intersection in intersection[level-1].keys():
+        for key_intersection in intersection.keys():
             # 计算一个节点对UR的相似度。
-            intersection_price = intersection[level-1][key_intersection]
+            intersection_price = intersection[key_intersection]
             union_price = 0.0
             parent_intersection = int(key_intersection/10)
-            for key_union in union[level-1].keys():
+            for key_union in union.keys():
                 parent_union = int(key_intersection/10)
-                if level == 1 or parent_union == parent_intersection:
-                    union_price += union[level-1][key_union]
+                if get_all_included or parent_union == parent_intersection:
+                    union_price += union[key_union]
             total_similarity += intersection_price/union_price
         similarity = total_similarity/node_size
 
@@ -119,35 +119,13 @@ class assignment3:
             intersection.append(intersection_dict)
 
         # 计算距离
-        sim1 = get_similarity(intersection, union, 1)
-        sim2 = get_similarity(intersection, union, 2)
-        sim3 = get_similarity(intersection, union, 3)
-        sim4 = get_similarity(intersection, union, 4)
+        sim1 = self.get_similarity(intersection[0], union[0], True)
+        sim2 = self.get_similarity(intersection[1], union[1], False)
+        sim3 = self.get_similarity(intersection[2], union[2], False)
+        sim4 = self.get_similarity(intersection[3], union[3], False)
 
         distance = 1 - (sim1+sim2*2+sim3*3+sim4*4)/10
         return distance
-
-    def get_jaccard_sample_sample(self, i, j):
-        sim1 = self.get_similarity(
-            self.buy_dicts_level_1[i], self.buy_dicts_level_1[j])
-        sim2 = self.get_similarity(
-            self.buy_dicts_level_2[i], self.buy_dicts_level_2[j])
-        sim3 = self.get_similarity(
-            self.buy_dicts_level_3[i], self.buy_dicts_level_3[j])
-        sim4 = self.get_similarity(
-            self.buy_dicts_level_4[i], self.buy_dicts_level_4[j])
-        return (sim1+sim2+sim3+sim4)/4
-
-    def get_jaccard_centroid_sample(self, i, j):
-        sim1 = self.get_similarity(
-            self.centroids_level_1[i], self.buy_dicts_level_1[j])
-        sim2 = self.get_similarity(
-            self.centroids_level_2[i], self.buy_dicts_level_2[j])
-        sim3 = self.get_similarity(
-            self.centroids_level_3[i], self.buy_dicts_level_3[j])
-        sim4 = self.get_similarity(
-            self.centroids_level_4[i], self.buy_dicts_level_4[j])
-        return (sim1+sim2+sim3+sim4)/4
 
     # 计算所有人的Jaccard系数
 
@@ -159,14 +137,6 @@ class assignment3:
                     self.jaccard[a_index, b_index] = jaccard
         print('-----------------------------------------')
         print('已完成Jaccard系数计算，一共有%d个。' % len(self.jaccard))
-
-    '''
-
-
-    以下是作业2-3代码。
-
-
-    '''
 
     def init_centroids(self):
         customer_index_list = []

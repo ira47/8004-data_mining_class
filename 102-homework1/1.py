@@ -4,7 +4,7 @@ import random
 
 class assignment1:
 
-    K = 40
+    K = 10
     N_CUSTOMER = 486
     N_CATEGORY = 979
 
@@ -122,14 +122,13 @@ class assignment1:
     # 作业1-2 计算所有人的Jaccard系数
 
     def count_jaccard(self):
-        count = 0
         for a_index in range(len(self.customers_id)):
             for b_index in range(len(self.customers_id)):
-                if a_index < b_index:
+                if a_index <= b_index:
                     similarity = self.get_similarity(
                         self.buy_dicts[a_index], self.buy_dicts[b_index])
                     self.jaccard[a_index, b_index] = similarity
-                    count += 1
+                    self.jaccard[b_index, a_index] = similarity
         print('-----------------------------------------')
         print('已完成Jaccard系数计算，一共有%d个。' % len(self.jaccard))
 
@@ -213,18 +212,34 @@ class assignment1:
                 self.clusters_old[cluster_index]), self.clusters_old[cluster_index][:n_show_each_cluster]))
 
         # 计算SC
-        sc_total_distance = 0.0
-        sc_line_sum = 0
-        for cluster_members in self.clusters_old:
-            for i in cluster_members:
-                for j in cluster_members:
-                    if i < j:
-                        similarity = self.jaccard[i, j]
-                        distance = 1 - similarity
-                        sc_total_distance += distance
-                        sc_line_sum += 1
-        SC = sc_total_distance/sc_line_sum
+        sc_total = 0.0
+        for cluster_index in range(self.K):
+            for customer_index in self.clusters_old[cluster_index]:
+                sc_in = 0.0
+                sc_out = 2.0
+                for another_cluster_index in range(self.K):
+                    size = 0
+                    total = 0.0
+                    for another_customer_index in self.clusters_old[another_cluster_index]:
+                        similarity = self.jaccard[customer_index,
+                                                  another_customer_index]
+                        total += 1 - similarity
 
+                        size += 1
+                    total /= size
+
+                    if cluster_index == another_cluster_index:
+                        sc_in = total
+                    elif total < sc_out:
+                        sc_out = total
+
+                if max(sc_out, sc_in) == 0:
+                    sc = 0
+                else:
+                    sc = (sc_out-sc_in)/max(sc_out, sc_in)
+                sc_total += sc
+
+        SC = sc_total / len(self.customers_id)
         print('该聚类的SC系数为：%f。' % SC)
 
         # 计算CP
