@@ -32,7 +32,7 @@ class data_preprocessor:
             day = self.start_date + datetime.timedelta(days=day_offset)
             weekday = day.weekday()
             if len(week_sequence) == 0 or weekday == 0:
-                week_sequence.append(0)
+                week_sequence.append(0.0)
             week_sequence[-1] += sales
         return week_sequence
 
@@ -42,7 +42,7 @@ class data_preprocessor:
             day = self.start_date + datetime.timedelta(days=day_offset)
             dayday = day.day
             if len(month_sequence) == 0 or dayday == 1:
-                month_sequence.append(0)
+                month_sequence.append(0.0)
             month_sequence[-1] += sales
         return month_sequence
 
@@ -121,13 +121,13 @@ class data_preprocessor:
             if key not in key_to_sequence.keys():
                 key_to_sequence[key] = sequence
             else:
-                # old_sequence = key_to_sequence[key]
-                # new_sequence = []
-                # for old_sales,sales in zip(old_sequence,sequence):
-                #     new_sales = old_sales + sales
-                #     new_sequence.append(new_sales)
-                # key_to_sequence[key] = new_sequence
-                key_to_sequence[key] += sequence
+                old_sequence = key_to_sequence[key]
+                new_sequence = []
+                for old_sales,sales in zip(old_sequence,sequence):
+                    new_sales = old_sales + sales
+                    new_sequence.append(new_sales)
+                key_to_sequence[key] = new_sequence
+                # key_to_sequence[key] += sequence
         return key_to_sequence
 
     def output_data(self):
