@@ -62,6 +62,8 @@ class data_preprocessor:
         return pluno[:5]
 
     def get_pluno_to_bndno(self, pluno):
+        if self.pluno_to_bndno_dict[pluno] == '':
+            return pluno
         return self.pluno_to_bndno_dict[pluno]
 
     sequence_converters = [
@@ -106,8 +108,10 @@ class data_preprocessor:
                 date = datetime.datetime.strptime(date_str, '%Y-%m-%d')
                 day_offset = (date - self.start_date).days
                 
-                if pluno not in self.pluno_to_bndno_dict.keys():
+                if pluno not in self.pluno_to_bndno_dict.keys() or \
+                    self.pluno_to_bndno_dict[pluno] == '':
                     self.pluno_to_bndno_dict[pluno] = bndno
+
                 if pluno not in self.pluno_to_day_sequence.keys():
                     self.pluno_to_day_sequence[pluno] = \
                         [0.0 for i in range((self.end_date-self.start_date).days+1)]
