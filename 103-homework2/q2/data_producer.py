@@ -34,6 +34,19 @@ class data_producer:
                     [0,3],
                     [0,1,2,3],
                     [0,1,2,3,4,5]]
+    data_titles = [['pluno','bndno','category1','category2','category3','category4',
+                  'day','is_weekday','-7','-6','-5','-4','-3','-2','-1'],
+                   ['b-7','b-6','b-5','b-4','b-3','b-2','b-1'],
+                   ['c1-7','c1-6','c1-5','c1-4','c1-3','c1-2','c1-1',
+                    'c2-7','c2-6','c2-5','c2-4','c2-3','c2-2','c2-1',
+                    'c3-7','c3-6','c3-5','c3-4','c3-3','c3-2','c3-1',
+                    'c4-7','c4-6','c4-5','c4-4','c4-3','c4-2','c4-1'],
+                   ['-2a','-2x','-2i','-3a','-3x','-3i','-4a','-4x','-4i'],
+                   ['b-2a','b-2x','b-2i','b-3a','b-3x','b-3i','b-4a','b-4x','b-4i'],
+                   ['c1-2a','c1-2x','c1-2i','c1-3a','c1-3x','c1-3i','c1-4a','c1-4x','c1-4i',
+                    'c2-2a','c2-2x','c2-2i','c2-3a','c2-3x','c2-3i','c2-4a','c2-4x','c2-4i',
+                    'c3-2a','c3-2x','c3-2i','c3-3a','c3-3x','c3-3i','c3-4a','c3-4x','c3-4i',
+                    'c4-2a','c4-2x','c4-2i','c4-3a','c4-3x','c4-3i','c4-4a','c4-4x','c4-4i']]
 
 
     def __init__(self):
@@ -228,6 +241,11 @@ class data_producer:
             print('开始输出' + output_file + '文件。')
             with open(output_file, 'w', newline='', encoding='utf8') as w:
                 writer = csv.writer(w)
+                title_to_write = []
+                for feature_function_index in self.data_recipes[recipe_index]:
+                    title_to_write += self.data_titles[feature_function_index]
+
+                writer.writerow(title_to_write)
                 total_line = 0
                 for day_offset in range(self.start_day,self.end_day):
                     for pluno in self.pluno_to_sequence.keys():
