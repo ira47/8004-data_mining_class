@@ -103,6 +103,8 @@ class data_preprocessor:
             for line in lines:
                 pluno = line[7]
                 bndno = line[14]
+                if '.' in bndno:
+                    bndno = bndno.split('.')[0]
                 qty = float(line[16])
                 date_str = line[1][:10]
                 date = datetime.datetime.strptime(date_str, '%Y-%m-%d')
