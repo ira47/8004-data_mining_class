@@ -11,7 +11,7 @@ import os
 class model_runner:
     x_data_dir = '../Data/feature/'
     y_data_addr = '../Data/feature/quantity.csv'
-    output_info_file = '../Data/model_info.csv'
+    output_info_file = '../Data/model_info_old.csv'
     output_model = '../Data/model/'
     num_of_x_data = 4
 
@@ -40,6 +40,8 @@ class model_runner:
 
     def train_and_assess(self,model,folder):
         model.fit(self.x_train,self.y_train)
+        if not os.path.exists(self.output_model + folder):
+            os.makedirs(self.output_model + folder)
         joblib.dump(model, self.output_model + folder + 'model.pkl')
         y_predict = model.predict(self.x_test)
         a = ((y_predict - self.y_test) ** 2).sum()
@@ -67,8 +69,6 @@ class model_runner:
                 dir2 = dir1 + 'svm/C=' + str(c) + '/'
                 for k in self.svm_kernel:
                     dir3 = dir2 + 'kernel=' + str(k) + '/'
-                    if not os.path.exists(dir3):
-                        os.makedirs(dir3)
                     self.svm_model = SVR(C=c,kernel=k,max_iter=200)
                     self.train_and_assess(self.svm_model,dir3)
 
@@ -76,8 +76,6 @@ class model_runner:
                 dir2 = dir1 + 'rf/n_estimators=' + str(e) + '/'
                 for o in self.rf_oob_score:
                     dir3 = dir2 + 'oob_score=' + str(o) + '/'
-                    if not os.path.exists(dir3):
-                        os.makedirs(dir3)
                     self.rf_model = RandomForestRegressor(n_estimators=e,oob_score=o)
                     self.train_and_assess(self.rf_model,dir3)
 
@@ -89,8 +87,6 @@ class model_runner:
                         dir4 = dir3 + 'solver=' + str(s) + '/'
                         for l in self.mlp_alpha:
                             dir5 = dir4 + 'alpha=' + str(l) + '/'
-                            if not os.path.exists(dir5):
-                                os.makedirs(dir5)
                             self.mlp_model = MLPRegressor(hidden_layer_sizes=h,activation=a,
                                                           solver=s,alpha=l,max_iter=200)
                             self.train_and_assess(self.mlp_model,dir5)
