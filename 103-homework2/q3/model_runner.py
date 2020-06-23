@@ -12,7 +12,7 @@ class model_runner:
     x_data_dir = '../Data/feature/'
     y_data_addr = '../Data/feature/quantity.csv'
     output_info_file = '../Data/model_info_old.csv'
-    output_model = '../Data/model/'
+    output_model = '../Data/model_old/'
     num_of_x_data = 4
 
     x_data = 0

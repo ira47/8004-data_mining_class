@@ -9,6 +9,8 @@ class data_producer:
     start_day = 28
     end_day = 182
     start_date = datetime.datetime.strptime('2016-02-01', '%Y-%m-%d')
+    # simple_category1 = ['23']
+    simple_category1 = ['22', '23', '25', '27']
 
     pluno_to_bndno = {}
     pluno_to_sequence = {}
@@ -50,25 +52,31 @@ class data_producer:
 
 
     def __init__(self):
-        self.load_data()
+        self.load_data(simple_load=True)
         self.update_frequency()
         self.output_feature()
+        self.output_quantity()
+
         # print(len(self.get_data_recipe('34150006',100,0)))
         # print(self.get_data_recipe('22002240',100,3))
 
-    def load_data(self):
+    def load_data(self,simple_load=False):
         for x,x_name in zip(self.x_to_sequence,self.x_names):
             addr = self.sequence_input_dir + x_name + self.suffix_addr
             with open(addr, 'r', encoding='utf8') as f:
                 lines = csv.reader(f)
                 for line in lines:
                     key = line[0]
+                    if simple_load and key[:2] not in self.simple_category1:
+                        continue
                     value = list(map(float,line[1:]))
                     x[key] = value
         with open(self.input_file, 'r', encoding='utf8') as f:
             lines = csv.reader(f)
             for line in lines:
                 pluno = line[7]
+                if simple_load and pluno[:2] not in self.simple_category1:
+                    continue
                 bndno = line[14]
                 if '.' in bndno:
                     bndno = bndno.split('.')[0]
@@ -241,10 +249,9 @@ class data_producer:
             print('开始输出' + output_file + '文件。')
             with open(output_file, 'w', newline='', encoding='utf8') as w:
                 writer = csv.writer(w)
-                title_to_write = []
+                title_to_write = ['pluno_','day_offset']
                 for feature_function_index in self.data_recipes[recipe_index]:
                     title_to_write += self.data_titles[feature_function_index]
-
                 writer.writerow(title_to_write)
                 total_line = 0
                 for day_offset in range(self.start_day,self.end_day):
@@ -256,6 +263,18 @@ class data_producer:
                         if total_line % 100000 == 0:
                             print('已输出' + str(total_line) + '行。')
             print('完成输出' + output_file + '文件。')
+
+    def output_quantity(self):
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
+        with open(self.output_dir + 'quantity.csv', 'w', newline='', encoding='utf8') as w:
+            writer = csv.writer(w)
+            writer.writerow(['pluno_','day','quantity'])
+            for day_offset in range(self.start_day, self.end_day):
+                for pluno in self.pluno_to_sequence.keys():
+                    quantity = self.pluno_to_sequence[pluno][day_offset]
+                    writer.writerow([pluno,day_offset,quantity])
+        print('已完成quantity数据的输出。')
 
 data_producer()
 
